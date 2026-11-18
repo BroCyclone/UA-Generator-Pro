@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cyan">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05070d">
+<meta name="description" content="UA Matrix Pro X — offline mobile User-Agent generator with exclusion engine, UA inspector and IP checker. Developed By Cyclone.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>UA Matrix Pro X - Developed By Cyclone</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+/* ================= THEMES ================= */
+:root{
+  --bg:#05070d; --bg2:#0a0f1c;
+  --text:#e6f7ff; --muted:#7f93a8; --line:rgba(255,255,255,.08);
+  --glass:rgba(14,20,34,.55); --glass2:rgba(20,28,46,.7);
+  --danger:#ff4d6d; --ok:#2dffb3;
+  --r:16px;
+  --mono:ui-monospace,"JetBrains Mono","Fira Code",Menlo,Consolas,"Roboto Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Myanmar",sans-serif;
+}
+[data-theme="cyan"]   {--a:#00f0ff; --a2:#3d7bff; --a-rgb:0,240,255;  --a2-rgb:61,123,255}
+[data-theme="emerald"]{--a:#00ff88; --a2:#00b36b; --a-rgb:0,255,136;  --a2-rgb:0,179,107}
+[data-theme="amber"]  {--a:#ffb020; --a2:#ff5e3a; --a-rgb:255,176,32; --a2-rgb:255,94,58}
+[data-theme="violet"] {--a:#c06bff; --a2:#ff3df2; --a-rgb:192,107,255;--a2-rgb:255,61,242}
+[data-theme="crimson"]{--a:#ff2e4d; --a2:#a1003a; --a-rgb:255,46,77;  --a2-rgb:161,0,58}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:var(--sans); background:var(--bg); color:var(--text);
+  font-size:14px; line-height:1.45; overflow-x:hidden;
+  -webkit-font-smoothing:antialiased; user-select:none; -webkit-user-select:none;
+}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.mono{font-family:var(--mono)}
+.selectable{user-select:text;-webkit-user-select:text}
+
+/* ================= AMBIENT BACKGROUND ================= */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+  background:radial-gradient(120% 80% at 50% -10%, rgba(var(--a-rgb),.12), transparent 60%), var(--bg)}
+.grid{position:absolute;left:-50%;right:-50%;bottom:-10%;height:70%;
+  background-image:
+    linear-gradient(rgba(var(--a-rgb),.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--a-rgb),.22) 1px, transparent 1px);
+  background-size:44px 44px;
+  transform:perspective(380px) rotateX(62deg);
+  transform-origin:center top;
+  mask-image:linear-gradient(to top, #000 10%, transparent 85%);
+  -webkit-mask-image:linear-gradient(to top, #000 10%, transparent 85%);
+  animation:gridRun 2.6s linear infinite}
+@keyframes gridRun{to{background-position:0 44px, 0 44px}}
+.orb{position:absolute;border-radius:50%;filter:blur(50px);opacity:.45;mix-blend-mode:screen}
+.orb.o1{width:260px;height:260px;background:var(--a);top:-60px;left:-80px;animation:float1 18s ease-in-out infinite}
+.orb.o2{width:220px;height:220px;background:var(--a2);top:40%;right:-90px;animation:float2 22s ease-in-out infinite}
+.orb.o3{width:160px;height:160px;background:var(--a);bottom:8%;left:20%;opacity:.25;animation:float3 26s ease-in-out infinite}
+@keyframes float1{50%{transform:translate(120px,160px) scale(1.15)}}
+@keyframes float2{50%{transform:translate(-140px,-120px) scale(.9)}}
+@keyframes float3{50%{transform:translate(90px,-200px) scale(1.25)}}
+.scan{position:absolute;left:0;right:0;height:120px;top:-120px;
+  background:linear-gradient(to bottom, transparent, rgba(var(--a-rgb),.06), transparent);
+  animation:scan 7s linear infinite}
+@keyframes scan{to{top:110%}}
+.rain{position:absolute;inset:0}
+.rain i{position:absolute;top:-20%;width:1px;height:90px;
+  background:linear-gradient(to bottom, transparent, rgba(var(--a-rgb),.7));
+  animation:drop linear infinite}
+@keyframes drop{to{transform:translateY(130vh)}}
+@media (prefers-reduced-motion:reduce){.grid,.orb,.scan,.rain i{animation:none!important}}
+
+/* ================= LAYOUT ================= */
+.app{position:relative;z-index:1;max-width:560px;margin:0 auto;min-height:100%;
+  padding:calc(env(safe-area-inset-top) + 10px) 14px calc(env(safe-area-inset-bottom) + 92px)}
+header.top{display:flex;align-items:center;gap:10px;padding:8px 4px 14px}
+.logo{width:42px;height:42px;border-radius:12px;flex:none;display:grid;place-items:center;
+  background:linear-gradient(135deg, rgba(var(--a-rgb),.25), rgba(var(--a2-rgb),.25));
+  border:1px solid rgba(var(--a-rgb),.5);box-shadow:0 0 18px rgba(var(--a-rgb),.35), inset 0 0 12px rgba(var(--a-rgb),.2);
+  font:800 15px var(--mono);color:var(--a);letter-spacing:-.5px}
+.brandtxt{flex:1;min-width:0}
+.brandtxt h1{font-size:17px;font-weight:800;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brandtxt h1 span{color:var(--a);text-shadow:0 0 12px rgba(var(--a-rgb),.7)}
+.dev{font:600 10.5px var(--mono);color:var(--muted);letter-spacing:1.4px;text-transform:uppercase}
+.dev b{color:var(--a);font-weight:700}
+.iconbtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;
+  background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  transition:.2s}
+.iconbtn:active{transform:scale(.92)}
+.iconbtn svg{width:20px;height:20px;stroke:var(--a)}
+
+.card{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);
+  backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);
+  padding:14px;margin-bottom:12px;position:relative;overflow:hidden;
+  box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;
+  background:linear-gradient(90deg, transparent, rgba(var(--a-rgb),.7), transparent)}
+.card h2{font-size:12px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.card h2::before{content:"";width:6px;height:6px;border-radius:2px;background:var(--a);box-shadow:0 0 8px var(--a)}
+.card h2 .sp{flex:1}
+
+.view{display:none;animation:viewIn .35s ease}
+.view.active{display:block}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:9px 6px;text-align:center}
+.stat b{display:block;font:800 18px var(--mono);color:var(--a);text-shadow:0 0 10px rgba(var(--a-rgb),.5)}
+.stat small{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase}
+.bar{height:5px;border-radius:5px;background:rgba(255,255,255,.06);margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--a),var(--a2));box-shadow:0 0 10px var(--a);transition:width .6s ease}
+
+/* chips */
+.label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin:4px 0 7px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{padding:7px 12px;border-radius:999px;font-size:12.5px;font-weight:600;
+  background:rgba(255,255,255,.04);border:1px solid var(--line);color:#b9c8d8;transition:.2s}
+.chip:active{transform:scale(.94)}
+.chip.on{background:rgba(var(--a-rgb),.15);border-color:rgba(var(--a-rgb),.7);color:var(--a);
+  box-shadow:0 0 12px rgba(var(--a-rgb),.25), inset 0 0 8px rgba(var(--a-rgb),.15)}
+.chip .n{opacity:.6;font:500 10.5px var(--mono);margin-left:4px}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:13px 16px;border-radius:14px;font-weight:700;font-size:14.5px;letter-spacing:.3px;transition:.2s}
+.btn:active{transform:scale(.97)}
+.btn-primary{color:#021014;background:linear-gradient(135deg,var(--a),var(--a2));
+  box-shadow:0 8px 24px rgba(var(--a-rgb),.35), 0 0 0 1px rgba(var(--a-rgb),.5) inset}
+[data-theme="crimson"] .btn-primary,[data-theme="violet"] .btn-primary{color:#fff}
+.btn-ghost{background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.btn-danger{background:rgba(255,77,109,.12);border:1px solid rgba(255,77,109,.4);color:#ff8da1}
+.btn-sm{padding:8px 12px;font-size:12.5px;border-radius:10px;width:auto}
+.btn-gen{padding:16px;font-size:16px;position:relative;overflow:hidden}
+.btn-gen::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);
+  animation:shine 3.2s ease-in-out infinite}
+@keyframes shine{60%,100%{left:130%}}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+
+/* code block */
+.ua-box{font:12.5px/1.55 var(--mono);color:#cfefff;word-break:break-all;
+  background:rgba(0,0,0,.4);border:1px solid rgba(var(--a-rgb),.25);border-radius:12px;padding:12px;
+  user-select:text;-webkit-user-select:text}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px;margin-top:10px}
+.kv dt{color:var(--muted)}
+.kv dd{font-family:var(--mono);color:var(--text);text-align:right;word-break:break-word}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font:700 10.5px var(--mono);
+  background:rgba(var(--a-rgb),.14);color:var(--a);border:1px solid rgba(var(--a-rgb),.35)}
+.tag.warn{background:rgba(255,77,109,.12);color:#ff8da1;border-color:rgba(255,77,109,.35)}
+
+/* IP */
+.ip{font:800 26px var(--mono);color:var(--a);text-shadow:0 0 16px rgba(var(--a-rgb),.6);letter-spacing:.5px;
+  word-break:break-all;min-height:38px;display:flex;align-items:center;gap:10px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok);flex:none}
+.dot.off{background:var(--danger);box-shadow:0 0 10px var(--danger)}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* lists */
+.toolbar{display:flex;gap:8px;margin-bottom:10px}
+.search{flex:1;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:12px;color:var(--text);
+  padding:10px 12px;font:13px var(--sans);outline:none;transition:.2s;user-select:text}
+.search:focus{border-color:rgba(var(--a-rgb),.6);box-shadow:0 0 0 3px rgba(var(--a-rgb),.12)}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:12px;padding:10px 10px 8px;animation:viewIn .3s ease}
+.item .meta{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.item .meta time{margin-left:auto;font:10.5px var(--mono);color:var(--muted)}
+.item .ua{font:11.5px/1.5 var(--mono);color:#bcd6e6;word-break:break-all;user-select:text;-webkit-user-select:text}
+.item .acts{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
+.mini{padding:6px 10px;border-radius:8px;font-size:11.5px;font-weight:600;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.mini:active{transform:scale(.94)}
+.mini.del{color:#ff8da1;border-color:rgba(255,77,109,.3)}
+.empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:13px}
+.empty .big{font-size:34px;margin-bottom:6px;filter:drop-shadow(0 0 10px rgba(var(--a-rgb),.5))}
+
+/* bottom nav */
+nav.tabs{position:fixed;z-index:20;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 10px);
+  width:calc(100% - 20px);max-width:540px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;
+  background:rgba(8,12,22,.75);border:1px solid var(--line);border-radius:20px;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:14px;
+  font-size:10.5px;font-weight:600;color:var(--muted);transition:.25s;position:relative}
+.tab svg{width:21px;height:21px;stroke:currentColor}
+.tab.on{color:var(--a);background:rgba(var(--a-rgb),.1)}
+.tab.on svg{filter:drop-shadow(0 0 6px rgba(var(--a-rgb),.8))}
+.tab .badge{position:absolute;top:3px;right:calc(50% - 22px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;
+  background:var(--a);color:#021014;font:800 9.5px/16px var(--mono);text-align:center}
+.tab .badge:empty{display:none}
+
+/* modal */
+.overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:18px;
+  background:rgba(2,4,10,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;visibility:hidden;transition:opacity .25s, visibility .25s}
+.overlay.show{opacity:1;visibility:visible}
+.modal{width:100%;max-width:440px;background:linear-gradient(160deg, rgba(20,28,46,.92), rgba(8,12,22,.95));
+  border:1px solid rgba(var(--a-rgb),.45);border-radius:22px;padding:18px;position:relative;
+  box-shadow:0 0 0 1px rgba(var(--a-rgb),.1), 0 0 40px rgba(var(--a-rgb),.25), 0 30px 60px rgba(0,0,0,.6);
+  transform:scale(.82) translateY(20px);opacity:0;transition:transform .35s cubic-bezier(.2,1.3,.4,1), opacity .25s}
+.overlay.show .modal{transform:none;opacity:1}
+.modal-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.modal-head h3{flex:1;font-size:15px;letter-spacing:.4px}
+.modal-head h3 small{display:block;font:600 10.5px var(--mono);color:var(--muted);letter-spacing:1.2px;text-transform:uppercase}
+.close{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.06);font-size:18px;color:var(--muted)}
+.decode{min-height:120px}
+.modal .row{margin-top:14px}
+
+.sheet .modal{align-self:flex-end;max-width:540px;border-radius:22px 22px 18px 18px}
+.themes{display:grid;gap:8px}
+.theme-opt{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.04);
+  border:1px solid var(--line);text-align:left;transition:.2s}
+.theme-opt.on{border-color:var(--sw);box-shadow:0 0 16px color-mix(in srgb, var(--sw) 35%, transparent)}
+.theme-opt .sw{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--sw),var(--sw2));box-shadow:0 0 14px var(--sw)}
+.theme-opt b{display:block;font-size:14px}
+.theme-opt small{color:var(--muted);font-size:11.5px}
+.theme-opt .ck{margin-left:auto;color:var(--sw);font-weight:800;opacity:0}
+.theme-opt.on .ck{opacity:1}
+
+/* toast */
+.toast{position:fixed;z-index:80;left:50%;bottom:calc(env(safe-area-inset-bottom) + 96px);transform:translate(-50%,20px);
+  padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;
+  background:rgba(8,12,22,.92);border:1px solid rgba(var(--a-rgb),.5);color:var(--text);
+  box-shadow:0 0 20px rgba(var(--a-rgb),.3);opacity:0;pointer-events:none;transition:.3s}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+footer{text-align:center;padding:16px 0 4px;color:var(--muted);font:600 11px var(--mono);letter-spacing:1.5px}
+footer b{color:var(--a);text-shadow:0 0 10px rgba(var(--a-rgb),.6)}
+footer .v{display:block;opacity:.6;font-size:10px;margin-top:3px;letter-spacing:1px}
+.offline-pill{display:none;margin:0 4px 10px;padding:7px 12px;border-radius:10px;font-size:12px;
+  background:rgba(255,77,109,.12);border:1px solid rgba(255,77,109,.35);color:#ffb3c0}
+body.is-offline .offline-pill{display:block}
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true">
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="rain" id="rain"></div>
+  <div class="grid"></div>
+  <div class="scan"></div>
+</div>
+
+<div class="app">
+  <header class="top">
+    <div class="logo">UA<sub style="font-size:9px">X</sub></div>
+    <div class="brandtxt">
+      <h1>UA Matrix <span>Pro X</span></h1>
+      <div class="dev">Developed By <b>Cyclone</b></div>
+    </div>
+    <button class="iconbtn" id="themeBtn" aria-label="Change theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.6-.9 1.2-1.8-.5-1-.1-2.2 1.1-2.2H17a4 4 0 0 0 4-4c0-5-4-10-9-10z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg>
+    </button>
+  </header>
+
+  <div class="offline-pill">⚡ Offline mode: the generator still works fully. The network check needs a connection.</div>
+
+  <!-- ============ GENERATOR ============ -->
+  <section class="view active" id="view-gen">
+    <div class="card">
+      <h2>Pool Status <span class="sp"></span><span class="tag mono" id="dbTag">DB</span></h2>
+      <div class="stats">
+        <div class="stat"><b id="sAvail">0</b><small>Active</small></div>
+        <div class="stat"><b id="sUsed">0</b><small>Used</small></div>
+        <div class="stat"><b id="sSkip">0</b><small>Skipped</small></div>
+        <div class="stat"><b id="sTotal">0</b><small>Total</small></div>
+      </div>
+      <div class="bar"><i id="poolBar"></i></div>
+    </div>
+
+    <div class="card">
+      <h2>Generator Filters</h2>
+      <div class="label">Brand</div>
+      <div class="chips" id="brandChips"></div>
+      <div class="label">Android Version</div>
+      <div class="chips" id="verChips"></div>
+      <div class="label" style="display:flex;justify-content:space-between">
+        <span>Matching active pool</span><span class="mono" style="color:var(--a)" id="matchCount">0</span>
+      </div>
+      <button class="btn btn-primary btn-gen" id="genBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Generate User-Agent
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>Exclusion Engine</h2>
+      <p style="color:var(--muted);font-size:12.5px">Each UA you <b style="color:var(--text)">Copy &amp; Save</b> or <b style="color:var(--text)">Skip</b> leaves the active pool for good, so it never comes up again. Removing an entry from Used History or the Skipped List puts it back in the pool.</p>
+    </div>
+  </section>
+
+  <!-- ============ USED ============ -->
+  <section class="view" id="view-used">
+    <div class="card">
+      <h2>Used History <span class="sp"></span><span class="tag" id="usedTag">0</span></h2>
+      <div class="toolbar">
+        <input class="search" id="usedSearch" type="search" placeholder="Search model, brand, build…">
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn btn-ghost btn-sm" id="usedCopyAll">📋 Copy All</button>
+        <button class="btn btn-ghost btn-sm" id="usedExport">⬇ Export .txt</button>
+        <button class="btn btn-danger btn-sm" id="usedClear">🗑 Clear</button>
+      </div>
+      <div class="list" id="usedList"></div>
+    </div>
+  </section>
+
+  <!-- ============ SKIPPED ============ -->
+  <section class="view" id="view-skip">
+    <div class="card">
+      <h2>Skipped List <span class="sp"></span><span class="tag warn" id="skipTag">0</span></h2>
+      <div class="toolbar">
+        <input class="search" id="skipSearch" type="search" placeholder="Search model, brand, build…">
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn btn-ghost btn-sm" id="skipRestore">♻ Restore All</button>
+        <button class="btn btn-danger btn-sm" id="skipClear">🗑 Clear</button>
+      </div>
+      <div class="list" id="skipList"></div>
+    </div>
+  </section>
+
+  <!-- ============ DIAGNOSTICS ============ -->
+  <section class="view" id="view-diag">
+    <div class="card">
+      <h2>IP &amp; Network Checker <span class="sp"></span>
+        <button class="iconbtn" id="ipRefresh" style="width:34px;height:34px" aria-label="Refresh IP">
+          <svg id="ipIcon" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+        </button>
+      </h2>
+      <div class="ip selectable"><span class="dot" id="netDot"></span><span id="ipVal">—</span></div>
+      <dl class="kv">
+        <dt>Status</dt><dd id="netStatus">Idle</dd>
+        <dt>Connection</dt><dd id="netType">—</dd>
+        <dt>Latency</dt><dd id="netLat">—</dd>
+        <dt>Last check</dt><dd id="netTime">—</dd>
+        <dt>Source</dt><dd>api.ipify.org</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h2>Current UA Inspector <span class="sp"></span><button class="mini" id="copyMyUA">📋 Copy</button></h2>
+      <div class="ua-box" id="myUA"></div>
+      <dl class="kv" id="myUAInfo"></dl>
+    </div>
+
+    <div class="card">
+      <h2>Device Snapshot</h2>
+      <dl class="kv" id="devInfo" style="margin-top:0"></dl>
+    </div>
+  </section>
+
+  <footer>
+    ⟨/⟩ Developed By <b>Cyclone</b>
+    <span class="v">UA MATRIX PRO X · v1.0 · OFFLINE READY</span>
+  </footer>
+</div>
+
+<!-- bottom nav -->
+<nav class="tabs">
+  <button class="tab on" data-view="gen">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Generate
+  </button>
+  <button class="tab" data-view="used">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>Used<span class="badge" id="bUsed"></span>
+  </button>
+  <button class="tab" data-view="skip">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>Skipped<span class="badge" id="bSkip"></span>
+  </button>
+  <button class="tab" data-view="diag">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Diagnostics
+  </button>
+</nav>
+
+<!-- result modal -->
+<div class="overlay" id="genModal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="logo" style="width:36px;height:36px;font-size:12px">UA</div>
+      <h3><span id="mTitle">Generated UA</span><small id="mSub">—</small></h3>
+      <button class="close" id="mClose" aria-label="Close">✕</button>
+    </div>
+    <div class="ua-box decode" id="mUA"></div>
+    <dl class="kv" id="mInfo"></dl>
+    <div class="row">
+      <button class="btn btn-danger" id="mSkip">🚫 Skip</button>
+      <button class="btn btn-primary" id="mSave">📋 Copy &amp; Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- theme sheet -->
+<div class="overlay sheet" id="themeModal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Select Theme<small>Saved on this device</small></h3>
+      <button class="close" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="themes" id="themeList"></div>
+  </div>
+</div>
+
+<!-- confirm -->
+<div class="overlay" id="confirmModal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-head"><h3 id="cTitle">Confirm</h3></div>
+    <p id="cMsg" style="color:var(--muted);font-size:13px"></p>
+    <div class="row">
+      <button class="btn btn-ghost" id="cNo">Cancel</button>
+      <button class="btn btn-danger" id="cYes">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   UA Matrix Pro X — Developed By Cyclone
+   100% offline. All data lives in this file + LocalStorage.
+   ===================================================================== */
+
+/* ---------- MASTER UA DATABASE ----------
+   Real device model codes × real Android firmware Build IDs per brand.
+   Format: [modelCode, marketingName, minAndroid, maxAndroid]            */
+const MODELS = {
+  Xiaomi: [
+    ['M2101K9G','Xiaomi 11 Lite 5G',11,13], ['2107113SG','Xiaomi 11T Pro',11,14],
+    ['2201123G','Xiaomi 12',12,14], ['2203129G','Xiaomi 12 Lite',12,14],
+    ['22081212UG','Xiaomi 12T Pro',12,15], ['2211133G','Xiaomi 13',13,15],
+    ['2210132G','Xiaomi 13 Pro',13,15], ['23078PND5G','Xiaomi 13T Pro',13,15],
+    ['23127PN0CG','Xiaomi 14',14,15], ['24030PN60G','Xiaomi 14 Ultra',14,15],
+    ['2406APNFAG','Xiaomi 14T',14,15]
+  ],
+  Redmi: [
+    ['M2101K7AG','Redmi Note 10',11,13], ['M2101K6G','Redmi Note 10 Pro',11,13],
+    ['2201117TG','Redmi Note 11',11,13], ['21091116AG','Redmi Note 11 Pro+ 5G',11,13],
+    ['22101316G','Redmi Note 12 Pro 5G',12,14], ['22120RN86G','Redmi 12C',12,14],
+    ['23021RAAEG','Redmi Note 12',13,14], ['23090RA98G','Redmi Note 13 Pro 5G',13,15],
+    ['23124RA7EO','Redmi Note 13',13,15], ['23053RN02A','Redmi 12',13,15],
+    ['24094RAD4G','Redmi Note 14',14,15], ['2409BRN2CA','Redmi 14C',14,15]
+  ],
+  Samsung: [
+    ['SM-G991B','Galaxy S21 5G',11,15], ['SM-A525F','Galaxy A52',11,14],
+    ['SM-S908E','Galaxy S22 Ultra',12,15], ['SM-A536E','Galaxy A53 5G',12,15],
+    ['SM-A235F','Galaxy A23',12,14], ['SM-M336B','Galaxy M33 5G',12,14],
+    ['SM-S918B','Galaxy S23 Ultra',13,15], ['SM-S911B','Galaxy S23',13,15],
+    ['SM-A546E','Galaxy A54 5G',13,15], ['SM-A145F','Galaxy A14',13,15],
+    ['SM-F946B','Galaxy Z Fold5',13,15], ['SM-S928B','Galaxy S24 Ultra',14,15],
+    ['SM-S921B','Galaxy S24',14,15], ['SM-A556E','Galaxy A55 5G',14,15],
+    ['SM-A156E','Galaxy A15 5G',14,15]
+  ],
+  Realme: [
+    ['RMX3363','realme GT Master Edition',11,13], ['RMX3301','realme GT 2 Pro',12,14],
+    ['RMX3521','realme 9',12,14], ['RMX3630','realme 10',12,14],
+    ['RMX3710','realme C55',13,14], ['RMX3771','realme 11 Pro 5G',13,15],
+    ['RMX3741','realme 11 Pro+ 5G',13,15], ['RMX3890','realme C67',13,15],
+    ['RMX3842','realme 12 Pro 5G',14,15], ['RMX3840','realme 12 Pro+ 5G',14,15],
+    ['RMX3851','realme GT 6',14,15]
+  ],
+  Oppo: [
+    ['CPH2159','OPPO A74',11,13], ['CPH2209','OPPO Reno5',11,13],
+    ['CPH2359','OPPO Reno7',11,13], ['CPH2385','OPPO A77',12,14],
+    ['CPH2477','OPPO A78',13,14], ['CPH2487','OPPO Reno8 T',13,15],
+    ['CPH2565','OPPO A58',13,15], ['CPH2591','OPPO Reno11',14,15],
+    ['CPH2603','OPPO Reno11 F',14,15], ['CPH2581','OPPO Find X7',14,15]
+  ],
+  Vivo: [
+    ['V2111','vivo Y21',11,13], ['V2109','vivo Y33s',11,13],
+    ['V2130','vivo V23 5G',12,14], ['V2207','vivo Y35',12,14],
+    ['V2202','vivo V25 5G',12,14], ['V2231','vivo Y36',13,14],
+    ['V2246','vivo V27 5G',13,15], ['V2250','vivo V27e',13,15],
+    ['V2303','vivo V29 5G',13,15], ['V2318','vivo V30',14,15],
+    ['V2324','vivo Y100',14,15]
+  ]
+};
+
+/* Genuine firmware Build IDs per brand family and Android version */
+const XM = {11:['RKQ1.200826.002','RKQ1.201112.002'],12:['SKQ1.211006.001','SKQ1.220303.001'],13:['TKQ1.221114.001','TKQ1.220829.002'],14:['UKQ1.230804.001','UKQ1.231003.002'],15:['AQ3A.240912.001','AQ3A.240829.003']};
+const OP = {11:['RKQ1.200903.002','RP1A.200720.011'],12:['SKQ1.210216.001','SP1A.210812.016'],13:['TP1A.220905.001','TP1A.220624.014'],14:['UKQ1.230924.001','UP1A.231005.007'],15:['AP3A.240617.008','AQ3A.240812.002']};
+const BUILDS = {
+  Xiaomi: XM, Redmi: XM,
+  Samsung: {11:['RP1A.200720.012','RP1A.201005.001'],12:['SP1A.210812.016','SP2A.220305.013'],13:['TP1A.220624.014','TP1A.220905.004'],14:['UP1A.231005.007','UQ1A.240205.004'],15:['AP3A.240905.015','AP3A.240617.008']},
+  Realme: OP, Oppo: OP,
+  Vivo: {11:['RP1A.200720.012','RKQ1.200826.002'],12:['SP1A.210812.003','SKQ1.211006.001'],13:['TP1A.220624.014','TP1A.220905.001'],14:['UP1A.231005.007','UKQ1.230924.001'],15:['AP3A.240905.015','AP3A.240617.008']}
+};
+
+/* Stable Chrome / WebView builds that shipped for each Android generation */
+const CHROME = {
+  11:['120.0.6099.230','121.0.6167.178','122.0.6261.119','123.0.6312.118','124.0.6367.179'],
+  12:['121.0.6167.178','122.0.6261.119','123.0.6312.118','124.0.6367.179','125.0.6422.165','126.0.6478.122'],
+  13:['123.0.6312.118','124.0.6367.179','125.0.6422.165','126.0.6478.122','127.0.6533.103','128.0.6613.146','129.0.6668.100'],
+  14:['125.0.6422.165','126.0.6478.122','127.0.6533.103','128.0.6613.146','129.0.6668.100','130.0.6723.107','131.0.6778.135'],
+  15:['128.0.6613.146','129.0.6668.100','130.0.6723.107','131.0.6778.135']
+};
+const BRANDS = Object.keys(MODELS);
+const VERSIONS = [11,12,13,14,15];
+
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+
+/* Build the deterministic master database (same on every launch, so exclusions persist) */
+const DB = (() => {
+  const out = [], seen = new Set();
+  for (const brand of BRANDS) {
+    for (const [code, name, min, max] of MODELS[brand]) {
+      for (let v = min; v <= max; v++) {
+        BUILDS[brand][v].forEach((build, i) => {
+          const cv = CHROME[v][hash(code + build) % CHROME[v].length];
+          const wv = i === 0; // first build → Android System WebView UA, second → Chrome Mobile UA
+          const ua = wv
+            ? `Mozilla/5.0 (Linux; Android ${v}; ${code} Build/${build}; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/${cv} Mobile Safari/537.36`
+            : `Mozilla/5.0 (Linux; Android ${v}; ${code} Build/${build}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${cv} Mobile Safari/537.36`;
+          if (seen.has(ua)) return;
+          seen.add(ua);
+          out.push({ id: hash(ua).toString(36) + ua.length.toString(36), ua, brand, code, name, android: v, build, chrome: cv, type: wv ? 'WebView' : 'Chrome' });
+        });
+      }
+    }
+  }
+  return out;
+})();
+const BY_ID = new Map(DB.map(d => [d.id, d]));
+
+/* ---------- STORAGE ---------- */
+const LS = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const K = { used:'uamx.used', skip:'uamx.skipped', theme:'uamx.theme', brand:'uamx.fBrand', ver:'uamx.fVer' };
+let used = LS.get(K.used, []).filter(e => BY_ID.has(e.id));     // [{id, t}]
+let skipped = LS.get(K.skip, []).filter(e => BY_ID.has(e.id));
+let fBrand = LS.get(K.brand, 'All');
+let fVer = LS.get(K.ver, 'All');
+let current = null;
+
+const excluded = () => { const s = new Set(); used.forEach(e => s.add(e.id)); skipped.forEach(e => s.add(e.id)); return s; };
+const persist = () => { LS.set(K.used, used); LS.set(K.skip, skipped); };
+const matches = (d, b = fBrand, v = fVer) => (b === 'All' || d.brand === b) && (v === 'All' || d.android === +v);
+const activePool = () => { const ex = excluded(); return DB.filter(d => !ex.has(d.id) && matches(d)); };
+
+/* ---------- HELPERS ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let toastT;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2000); }
+function vibrate(ms){ try { navigator.vibrate && navigator.vibrate(ms); } catch {} }
+async function copyText(text){
+  try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; } } catch {}
+  // Fallback for Android WebViews without async clipboard
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly',''); ta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+  document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+  let ok = false; try { ok = document.execCommand('copy'); } catch {}
+  ta.remove(); return ok;
+}
+function fmtTime(t){ const d = new Date(t); return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+function openModal(el){ el.classList.add('show'); }
+function closeModal(el){ el.classList.remove('show'); }
+function confirmBox(title, msg, yesLabel = 'Confirm'){
+  return new Promise(res => {
+    $('#cTitle').textContent = title; $('#cMsg').textContent = msg; $('#cYes').textContent = yesLabel;
+    const m = $('#confirmModal'); openModal(m);
+    const done = v => { closeModal(m); $('#cYes').onclick = $('#cNo').onclick = null; res(v); };
+    $('#cYes').onclick = () => done(true); $('#cNo').onclick = () => done(false);
+  });
+}
+
+/* ---------- RENDER: generator ---------- */
+function renderStats(){
+  const ex = excluded();
+  const avail = DB.length - ex.size;
+  $('#sAvail').textContent = avail; $('#sUsed').textContent = used.length;
+  $('#sSkip').textContent = skipped.length; $('#sTotal').textContent = DB.length;
+  $('#poolBar').style.width = (avail / DB.length * 100).toFixed(1) + '%';
+  $('#dbTag').textContent = DB.length + ' UAs';
+  $('#bUsed').textContent = used.length || ''; $('#bSkip').textContent = skipped.length || '';
+  $('#usedTag').textContent = used.length; $('#skipTag').textContent = skipped.length;
+
+  $('#brandChips').innerHTML = ['All', ...BRANDS].map(b => {
+    const n = DB.filter(d => !ex.has(d.id) && matches(d, b, fVer)).length;
+    return `<button class="chip ${b === fBrand ? 'on' : ''}" data-brand="${b}">${b}<span class="n">${n}</span></button>`;
+  }).join('');
+  $('#verChips').innerHTML = ['All', ...VERSIONS].map(v => {
+    const n = DB.filter(d => !ex.has(d.id) && matches(d, fBrand, v)).length;
+    return `<button class="chip ${String(v) === String(fVer) ? 'on' : ''}" data-ver="${v}">${v === 'All' ? 'All' : 'Android ' + v}<span class="n">${n}</span></button>`;
+  }).join('');
+  $('#matchCount').textContent = activePool().length + ' available';
+}
+
+/* ---------- RENDER: lists ---------- */
+function itemHTML(entry, kind){
+  const d = BY_ID.get(entry.id);
+  return `<div class="item" data-id="${d.id}">
+    <div class="meta"><span class="tag">${esc(d.brand)}</span><span class="tag">A${d.android}</span>
+      <span style="font-size:12px;font-weight:600">${esc(d.name)}</span><time>${fmtTime(entry.t)}</time></div>
+    <div class="ua">${esc(d.ua)}</div>
+    <div class="acts">
+      <button class="mini" data-act="copy">📋 Copy</button>
+      ${kind === 'skip' ? '<button class="mini" data-act="restore">♻ Restore</button>' : ''}
+      <button class="mini del" data-act="del">✕ Delete</button>
+    </div></div>`;
+}
+function renderList(kind){
+  const arr = kind === 'used' ? used : skipped;
+  const q = (kind === 'used' ? $('#usedSearch') : $('#skipSearch')).value.trim().toLowerCase();
+  const list = kind === 'used' ? $('#usedList') : $('#skipList');
+  const rows = arr.slice().reverse().filter(e => !q || BY_ID.get(e.id).ua.toLowerCase().includes(q) || BY_ID.get(e.id).name.toLowerCase().includes(q) || BY_ID.get(e.id).brand.toLowerCase().includes(q));
+  list.innerHTML = rows.length ? rows.map(e => itemHTML(e, kind)).join('')
+    : `<div class="empty"><div class="big">${kind === 'used' ? '🗂' : '🚫'}</div>${q ? 'No matches for your search.' : kind === 'used' ? 'No saved UAs yet. Generate one, then tap Copy &amp; Save.' : 'Nothing skipped yet.'}</div>`;
+}
+function renderAll(){ renderStats(); renderList('used'); renderList('skip'); }
+
+/* ---------- GENERATE ---------- */
+function decodeEffect(el, text){
+  const chars = 'ABCDEF0123456789/;()._-';
+  let frame = 0; const total = 16;
+  clearInterval(el._t);
+  el._t = setInterval(() => {
+    frame++;
+    const reveal = Math.floor(text.length * frame / total);
+    let s = text.slice(0, reveal);
+    for (let i = reveal; i < text.length; i++) s += text[i] === ' ' ? ' ' : chars[(Math.random() * chars.length) | 0];
+    el.textContent = s;
+    if (frame >= total) { clearInterval(el._t); el.textContent = text; }
+  }, 28);
+}
+function generate(){
+  const pool = activePool();
+  if (!pool.length) {
+    toast('⚠ Active pool is empty for these filters');
+    vibrate([30, 40, 30]); return;
+  }
+  const rnd = crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Math.random() * 4294967295;
+  current = pool[rnd % pool.length];
+  $('#mTitle').textContent = current.name;
+  $('#mSub').textContent = `${current.brand} · Android ${current.android} · ${current.type}`;
+  $('#mInfo').innerHTML = `
+    <dt>Model code</dt><dd>${esc(current.code)}</dd>
+    <dt>Build ID</dt><dd>${esc(current.build)}</dd>
+    <dt>Chrome</dt><dd>${esc(current.chrome)}</dd>
+    <dt>Left in pool</dt><dd>${pool.length - 1}</dd>`;
+  openModal($('#genModal'));
+  decodeEffect($('#mUA'), current.ua);
+  vibrate(15);
+}
+async function saveCurrent(){
+  if (!current) return;
+  const ok = await copyText(current.ua);
+  used.push({ id: current.id, t: Date.now() }); persist();
+  closeModal($('#genModal')); current = null; renderAll();
+  toast(ok ? '✅ Copied & saved to Used History' : '💾 Saved. Copy was blocked, so copy it from Used History.');
+  vibrate(20);
+}
+function skipCurrent(){
+  if (!current) return;
+  skipped.push({ id: current.id, t: Date.now() }); persist();
+  closeModal($('#genModal')); current = null; renderAll();
+  toast('🚫 Skipped. Removed from the pool');
+}
+
+/* ---------- NETWORK ---------- */
+let ipBusy = false;
+async function checkIP(){
+  if (ipBusy) return; ipBusy = true;
+  const icon = $('#ipIcon'); icon.classList.add('spin');
+  $('#netStatus').textContent = 'Checking…'; $('#ipVal').textContent = '···';
+  const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 8000);
+  const t0 = performance.now();
+  try {
+    const r = await fetch('https://api.ipify.org?format=json', { cache: 'no-store', signal: ctrl.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    $('#ipVal').textContent = j.ip || 'Unknown';
+    $('#netStatus').textContent = 'Online'; $('#netDot').classList.remove('off');
+    $('#netLat').textContent = Math.round(performance.now() - t0) + ' ms';
+  } catch (e) {
+    $('#ipVal').textContent = 'Unavailable';
+    $('#netStatus').textContent = navigator.onLine ? (e.name === 'AbortError' ? 'Timed out' : 'Request failed') : 'Offline';
+    $('#netDot').classList.add('off'); $('#netLat').textContent = '—';
+  } finally {
+    clearTimeout(to); ipBusy = false; icon.classList.remove('spin');
+    $('#netTime').textContent = new Date().toLocaleTimeString();
+    const c = navigator.connection;
+    $('#netType').textContent = c ? [c.effectiveType && c.effectiveType.toUpperCase(), c.downlink ? c.downlink + ' Mbps' : ''].filter(Boolean).join(' · ') || 'Unknown' : (navigator.onLine ? 'Connected' : 'Offline');
+  }
+}
+
+/* ---------- UA INSPECTOR ---------- */
+function inspectUA(){
+  const ua = navigator.userAgent;
+  $('#myUA').textContent = ua;
+  const and = ua.match(/Android\s([\d.]+)/);
+  const dev = ua.match(/Android[^;]*;\s*([^;)]+?)(?:\sBuild\/([^;)]+))?[;)]/);
+  const chrome = ua.match(/Chrome\/([\d.]+)/);
+  const sam = ua.match(/SamsungBrowser\/([\d.]+)/);
+  const ff = ua.match(/Firefox\/([\d.]+)/);
+  const safari = /Safari/.test(ua) && !chrome ? ua.match(/Version\/([\d.]+)/) : null;
+  const isWV = /;\s?wv\)/.test(ua) || /Version\/4\.0.*Chrome/.test(ua);
+  const os = and ? 'Android ' + and[1] : /iPhone|iPad/.test(ua) ? 'iOS ' + ((ua.match(/OS ([\d_]+)/) || [,''])[1].replace(/_/g, '.')) : /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'Unknown';
+  const browser = sam ? 'Samsung Internet ' + sam[1] : ff ? 'Firefox ' + ff[1] : chrome ? (/Edg/.test(ua) ? 'Edge ' : 'Chrome ') + chrome[1] : safari ? 'Safari ' + safari[1] : 'Unknown';
+  const inDB = DB.some(d => d.ua === ua);
+  $('#myUAInfo').innerHTML = `
+    <dt>OS</dt><dd>${esc(os)}</dd>
+    <dt>Browser</dt><dd>${esc(browser)}</dd>
+    <dt>Device</dt><dd>${esc(and && dev ? dev[1] : '—')}</dd>
+    <dt>Build ID</dt><dd>${esc(dev && dev[2] ? dev[2] : '—')}</dd>
+    <dt>Context</dt><dd><span class="tag ${isWV ? '' : 'warn'}">${isWV ? 'ANDROID WEBVIEW' : 'BROWSER'}</span></dd>
+    <dt>Mobile</dt><dd>${/Mobile/.test(ua) ? 'Yes' : 'No'}</dd>
+    <dt>In Matrix DB</dt><dd>${inDB ? 'Yes' : 'No'}</dd>
+    <dt>Length</dt><dd>${ua.length} chars</dd>`;
+  $('#devInfo').innerHTML = `
+    <dt>Screen</dt><dd>${screen.width}×${screen.height} @${(window.devicePixelRatio || 1).toFixed(2)}x</dd>
+    <dt>Viewport</dt><dd>${innerWidth}×${innerHeight}</dd>
+    <dt>Language</dt><dd>${esc(navigator.language || '—')}</dd>
+    <dt>Timezone</dt><dd>${esc(Intl.DateTimeFormat().resolvedOptions().timeZone || '—')}</dd>
+    <dt>CPU cores</dt><dd>${navigator.hardwareConcurrency || '—'}</dd>
+    <dt>Memory</dt><dd>${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '—'}</dd>
+    <dt>Touch points</dt><dd>${navigator.maxTouchPoints ?? '—'}</dd>
+    <dt>Standalone</dt><dd>${matchMedia('(display-mode: standalone)').matches ? 'Yes (installed)' : 'No'}</dd>`;
+}
+
+/* ---------- THEMES ---------- */
+const THEMES = [
+  { id:'cyan',    name:'Cyberpunk Cyan', sub:'Default · electric neon cyan', c:'#00f0ff', c2:'#3d7bff' },
+  { id:'emerald', name:'Matrix Emerald', sub:'Green code rain',               c:'#00ff88', c2:'#00b36b' },
+  { id:'amber',   name:'Sunset Amber',   sub:'Warm retro glow',               c:'#ffb020', c2:'#ff5e3a' },
+  { id:'violet',  name:'Neon Violet',    sub:'Synthwave purple',              c:'#c06bff', c2:'#ff3df2' },
+  { id:'crimson', name:'Deep Crimson',   sub:'Red alert mode',                c:'#ff2e4d', c2:'#a1003a' }
+];
+function applyTheme(id){
+  if (!THEMES.some(t => t.id === id)) id = 'cyan';
+  document.documentElement.dataset.theme = id; LS.set(K.theme, id);
+  $('#themeList').innerHTML = THEMES.map(t => `
+    <button class="theme-opt ${t.id === id ? 'on' : ''}" data-theme-id="${t.id}" style="--sw:${t.c};--sw2:${t.c2}">
+      <span class="sw"></span><span><b>${t.name}</b><small>${t.sub}</small></span><span class="ck">✓</span>
+    </button>`).join('');
+}
+
+/* ---------- BACKGROUND RAIN ---------- */
+(function rain(){
+  const r = $('#rain'); let h = '';
+  for (let i = 0; i < 14; i++) h += `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-duration:${(4 + Math.random() * 6).toFixed(1)}s;animation-delay:-${(Math.random() * 8).toFixed(1)}s;opacity:${(.2 + Math.random() * .5).toFixed(2)}"></i>`;
+  r.innerHTML = h;
+})();
+
+/* ---------- EVENTS ---------- */
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + t.dataset.view));
+  if (t.dataset.view === 'diag') { inspectUA(); if ($('#ipVal').textContent === '—') checkIP(); }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}));
+$('#brandChips').addEventListener('click', e => { const c = e.target.closest('[data-brand]'); if (!c) return; fBrand = c.dataset.brand; LS.set(K.brand, fBrand); renderStats(); });
+$('#verChips').addEventListener('click', e => { const c = e.target.closest('[data-ver]'); if (!c) return; fVer = c.dataset.ver; LS.set(K.ver, fVer); renderStats(); });
+$('#genBtn').addEventListener('click', generate);
+$('#mSave').addEventListener('click', saveCurrent);
+$('#mSkip').addEventListener('click', skipCurrent);
+$('#mClose').addEventListener('click', () => { closeModal($('#genModal')); current = null; });
+
+function listHandler(kind){
+  return async e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const id = b.closest('.item').dataset.id; const d = BY_ID.get(id);
+    if (b.dataset.act === 'copy') { toast((await copyText(d.ua)) ? '📋 Copied' : '⚠ Copy failed'); return; }
+    if (kind === 'used') used = used.filter(x => x.id !== id); else skipped = skipped.filter(x => x.id !== id);
+    persist(); renderAll();
+    toast(b.dataset.act === 'restore' ? '♻ Restored to the active pool' : '✕ Deleted and returned to the pool');
+  };
+}
+$('#usedList').addEventListener('click', listHandler('used'));
+$('#skipList').addEventListener('click', listHandler('skip'));
+$('#usedSearch').addEventListener('input', () => renderList('used'));
+$('#skipSearch').addEventListener('input', () => renderList('skip'));
+
+$('#usedCopyAll').addEventListener('click', async () => {
+  if (!used.length) return toast('Nothing to copy');
+  toast((await copyText(used.map(e => BY_ID.get(e.id).ua).join('\n'))) ? `📋 Copied ${used.length} UAs` : '⚠ Copy failed');
+});
+$('#usedExport').addEventListener('click', () => {
+  if (!used.length) return toast('Nothing to export');
+  const blob = new Blob([used.map(e => BY_ID.get(e.id).ua).join('\n') + '\n'], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'ua-matrix-pro-x-used-' + new Date().toISOString().slice(0, 10) + '.txt';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('⬇ Export started');
+});
+$('#usedClear').addEventListener('click', async () => {
+  if (!used.length) return toast('History is already empty');
+  if (await confirmBox('Clear Used History?', `${used.length} UAs go back to the active generation pool.`, 'Clear')) { used = []; persist(); renderAll(); toast('🗑 Used History cleared'); }
+});
+$('#skipClear').addEventListener('click', async () => {
+  if (!skipped.length) return toast('Skipped List is already empty');
+  if (await confirmBox('Clear Skipped List?', `${skipped.length} UAs go back to the active generation pool.`, 'Clear')) { skipped = []; persist(); renderAll(); toast('🗑 Skipped List cleared'); }
+});
+$('#skipRestore').addEventListener('click', () => {
+  if (!skipped.length) return toast('Nothing to restore');
+  const n = skipped.length; skipped = []; persist(); renderAll(); toast(`♻ Restored ${n} UAs`);
+});
+
+$('#ipRefresh').addEventListener('click', checkIP);
+$('#copyMyUA').addEventListener('click', async () => toast((await copyText(navigator.userAgent)) ? '📋 Your UA copied' : '⚠ Copy failed'));
+
+$('#themeBtn').addEventListener('click', () => openModal($('#themeModal')));
+$('#themeList').addEventListener('click', e => { const b = e.target.closest('[data-theme-id]'); if (!b) return; applyTheme(b.dataset.themeId); toast('🎨 ' + THEMES.find(t => t.id === b.dataset.themeId).name); });
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => {
+  if (e.target === o || e.target.closest('[data-close]')) { if (o.id === 'confirmModal') $('#cNo').click(); else { closeModal(o); if (o.id === 'genModal') current = null; } }
+}));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.overlay.show').forEach(o => o.id === 'confirmModal' ? $('#cNo').click() : closeModal(o)); });
+
+const syncOnline = () => document.body.classList.toggle('is-offline', !navigator.onLine);
+addEventListener('online', () => { syncOnline(); toast('🟢 Back online'); });
+addEventListener('offline', () => { syncOnline(); toast('🔴 Offline: the generator still works'); });
+
+/* ---------- INIT ---------- */
+if (!BRANDS.includes(fBrand) && fBrand !== 'All') fBrand = 'All';
+if (fVer !== 'All' && !VERSIONS.includes(+fVer)) fVer = 'All';
+applyTheme(LS.get(K.theme, 'cyan'));
+syncOnline();
+renderAll();
+inspectUA();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "UA Matrix Pro X - Developed By Cyclone",
+  "short_name": "UA Matrix X",
+  "description": "Offline mobile User-Agent generator with exclusion engine, UA inspector and IP checker. Developed By Cyclone.",
+  "id": "/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05070d",
+  "theme_color": "#05070d",
+  "categories": ["utilities", "developer"],
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
